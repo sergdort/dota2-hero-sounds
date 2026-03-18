@@ -16,6 +16,10 @@
     "lint:fix": "biome check --fix src/",
     "format": "biome format --write src/",
     "check": "biome check --fix src/",
+    "start": "node dist/cli.js",
+    "start:claude": "node dist/cli.js install --claude",
+    "start:opencode": "node dist/cli.js install --opencode",
+    "start:all": "node dist/cli.js install --all",
     "prepublishOnly": "pnpm run build"
   },
   "keywords": [
