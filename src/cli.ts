@@ -1,0 +1,170 @@
+#!/usr/bin/env node
+
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { Command } from "commander";
+import { playSound, SOUND_CATEGORIES } from "./play-sound.js";
+import {
+  isClaudeCodeAvailable,
+  installClaudeHooks,
+  uninstallClaudeHooks,
+  getClaudeSettingsPath,
+} from "./claude-hooks.js";
+import {
+  isOpenCodeAvailable,
+  installOpenCodePlugin,
+  uninstallOpenCodePlugin,
+  getOpenCodePluginPath,
+} from "./opencode-plugin.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const PLAY_SCRIPT_PATH = join(__dirname, "play.js");
+
+// ── Helpers ──────────────────────────────────────────────────────────
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// ── Program ──────────────────────────────────────────────────────────
+
+const program = new Command();
+
+program
+  .name("dota2-code-sounds")
+  .description("Dota 2 Axe voice notifications for Claude Code and OpenCode")
+  .version("26.3.18");
+
+// ── install ──────────────────────────────────────────────────────────
+
+program
+  .command("install")
+  .description("Install hooks/plugins for detected tools")
+  .option("--claude", "Install Claude Code hooks only")
+  .option("--opencode", "Install OpenCode plugin only")
+  .option("--all", "Install for all supported tools")
+  .action(async (opts: { claude?: boolean; opencode?: boolean; all?: boolean }) => {
+    const wantClaude = opts.claude || opts.all;
+    const wantOpenCode = opts.opencode || opts.all;
+    const autoDetect = !wantClaude && !wantOpenCode;
+
+    let installedAny = false;
+
+    // Claude Code
+    const claudeAvailable = isClaudeCodeAvailable();
+    const shouldInstallClaude = wantClaude || (autoDetect && claudeAvailable);
+
+    if (shouldInstallClaude) {
+      if (!claudeAvailable) {
+        console.error("Error: Claude Code config directory (~/.claude/) not found. Is Claude Code installed?");
+      } else {
+        installClaudeHooks(PLAY_SCRIPT_PATH);
+        console.log("[+] Claude Code hooks installed");
+        console.log("    Config: " + getClaudeSettingsPath());
+        installedAny = true;
+      }
+    }
+
+    // OpenCode
+    const openCodeAvailable = isOpenCodeAvailable();
+    const shouldInstallOpenCode = wantOpenCode || (autoDetect && openCodeAvailable);
+
+    if (shouldInstallOpenCode) {
+      if (!openCodeAvailable) {
+        console.error("Error: OpenCode config directory (~/.config/opencode/) not found. Is OpenCode installed?");
+      } else {
+        installOpenCodePlugin();
+        console.log("[+] OpenCode plugin installed");
+        console.log("    Plugin: " + getOpenCodePluginPath());
+        installedAny = true;
+      }
+    }
+
+    if (!installedAny) {
+      console.log("No supported tools detected. Use --claude or --opencode to force install.");
+      console.log("");
+      console.log("Supported tools:");
+      console.log("  Claude Code  (~/.claude/)");
+      console.log("  OpenCode     (~/.config/opencode/)");
+      process.exitCode = 1;
+      return;
+    }
+
+    console.log("");
+    console.log("Dota 2 Axe is ready. Good luck, have fun!");
+  });
+
+// ── uninstall ────────────────────────────────────────────────────────
+
+program
+  .command("uninstall")
+  .description("Remove all hooks and plugins")
+  .option("--claude", "Remove Claude Code hooks only")
+  .option("--opencode", "Remove OpenCode plugin only")
+  .action((opts: { claude?: boolean; opencode?: boolean }) => {
+    const removeAll = !opts.claude && !opts.opencode;
+
+    if (removeAll || opts.claude) {
+      uninstallClaudeHooks();
+      console.log("[-] Claude Code hooks removed");
+    }
+
+    if (removeAll || opts.opencode) {
+      uninstallOpenCodePlugin();
+      console.log("[-] OpenCode plugin removed");
+    }
+
+    console.log("");
+    console.log("Axe is not Axe! (sounds removed)");
+  });
+
+// ── test ─────────────────────────────────────────────────────────────
+
+program
+  .command("test")
+  .description("Play one sound from each category")
+  .argument("[category]", "Play a specific category only")
+  .action(async (category?: string) => {
+    if (category) {
+      if (!SOUND_CATEGORIES[category]) {
+        console.error(`Unknown category: ${category}`);
+        console.error(`Available: ${Object.keys(SOUND_CATEGORIES).join(", ")}`);
+        process.exitCode = 1;
+        return;
+      }
+      console.log(`Playing: ${category}`);
+      playSound(category);
+      return;
+    }
+
+    console.log("Testing all sound categories...\n");
+    for (const cat of Object.keys(SOUND_CATEGORIES)) {
+      console.log(`  Playing: ${cat}`);
+      playSound(cat);
+      await sleep(2000);
+    }
+    console.log("\nDone. If you heard Axe, everything is working.");
+  });
+
+// ── list ─────────────────────────────────────────────────────────────
+
+program
+  .command("list")
+  .description("Show all available sounds by category")
+  .action(() => {
+    console.log("Dota 2 Sound Categories\n");
+    for (const [cat, sounds] of Object.entries(SOUND_CATEGORIES)) {
+      console.log(`  ${cat}:`);
+      for (const sound of sounds) {
+        const name = sound.replace(/^.*\//, "").replace(".mp3", "");
+        console.log(`    - ${name}`);
+      }
+      console.log("");
+    }
+  });
+
+// ── parse ────────────────────────────────────────────────────────────
+
+program.parse();
