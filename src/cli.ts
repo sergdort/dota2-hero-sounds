@@ -15,7 +15,7 @@ import {
   isOpenCodeAvailable,
   uninstallOpenCodePlugin,
 } from './opencode-plugin.js'
-import { playSound, SOUND_CATEGORIES } from './play-sound.js'
+import { CATEGORIES, listSounds, playSound } from './play-sound.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -132,9 +132,9 @@ program
   .argument('[category]', 'Play a specific category only')
   .action(async (category?: string) => {
     if (category) {
-      if (!SOUND_CATEGORIES[category]) {
+      if (!listSounds()[category]) {
         console.error(`Unknown category: ${category}`)
-        console.error(`Available: ${Object.keys(SOUND_CATEGORIES).join(', ')}`)
+        console.error(`Available: ${[...CATEGORIES].join(', ')}`)
         process.exitCode = 1
         return
       }
@@ -144,7 +144,7 @@ program
     }
 
     console.log('Testing all sound categories...\n')
-    for (const cat of Object.keys(SOUND_CATEGORIES)) {
+    for (const cat of [...CATEGORIES]) {
       console.log(`  Playing: ${cat}`)
       playSound(cat)
       await sleep(2000)
@@ -159,7 +159,7 @@ program
   .description('Show all available sounds by category')
   .action(() => {
     console.log('Dota 2 Sound Categories\n')
-    for (const [cat, sounds] of Object.entries(SOUND_CATEGORIES)) {
+    for (const [cat, sounds] of Object.entries(listSounds())) {
       console.log(`  ${cat}:`)
       for (const sound of sounds) {
         const name = sound.replace(/^.*\//, '').replace('.mp3', '')
