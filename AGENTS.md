@@ -1,6 +1,6 @@
 # dota2-code-sounds
 
-Dota 2 hero voice line notifications for Claude Code and OpenCode.
+Dota 2 hero voice line notifications for Claude Code, OpenCode, and Pi.
 
 ## Living document
 
@@ -16,7 +16,8 @@ node dist/cli.js test <category>    # test one category: success, error, attenti
 node dist/cli.js list               # show all sounds by category
 node dist/cli.js install --claude   # install Claude Code hooks
 node dist/cli.js install --opencode # install OpenCode plugin
-node dist/cli.js install --all      # install for both tools
+node dist/cli.js install --pi       # install Pi extension
+node dist/cli.js install --all      # install for all tools
 node dist/cli.js uninstall          # remove all hooks/plugins
 pnpm lint                           # check for lint/format issues
 pnpm check                          # auto-fix lint/format issues
@@ -31,6 +32,10 @@ src/
   cli.ts            — Commander.js CLI (install/uninstall/test/list)
   claude-hooks.ts   — Reads/writes Claude Code hooks in ~/.claude/settings.json
   opencode-plugin.ts — Generates self-contained OpenCode plugin to ~/.config/opencode/plugins/
+  pi-extension.ts   — Installs/removes Pi extension via `pi install`/`pi remove`
+pi-extension/
+  index.ts          — Pi extension entry point (loaded by Pi via jiti, no compilation)
+  package.json      — Pi package manifest with "pi" key
 sounds/
   success/          — Positive/victorious lines (task completion)
   error/            — Defeat/blame/sadness lines (failures)
@@ -40,11 +45,26 @@ sounds/
 
 ### Key implementation details
 
-- OpenCode plugin uses `session.status` busy->idle transition for completion detection, not `session.idle`
-- OpenCode plugin plays start sound on plugin init since `session.created` fires before plugin loads
 - Claude Code hooks call `node <abs-path>/dist/play.js <category>` with absolute paths resolved at install time
 - Hooks are tagged with `# dota2-code-sounds` comment for clean install/uninstall
+- OpenCode plugin uses `session.status` busy->idle transition for completion detection, not `session.idle`
+- OpenCode plugin plays start sound on plugin init since `session.created` fires before plugin loads
+- Pi extension uses `session_start`, `agent_end`, `tool_execution_end`, and `session_shutdown` events
+- Pi extension plays attention sound only for dangerous bash commands (rm, sudo, chmod, etc.)
 - Sound playback is async/non-blocking (detached `afplay` process)
+- All sound players have a 3-second debounce cooldown to prevent overlapping sounds
+
+### Event mapping per tool
+
+Only events with certain detection are implemented. If a tool doesn't support a scenario, it's not implemented.
+
+| Scenario | Claude Code | OpenCode | Pi |
+|----------|------------|----------|----|
+| Session start | `SessionStart` | plugin init | `session_start` |
+| Task complete | `Stop` | `session.status` busy→idle | `agent_end` |
+| Error/failure | `PostToolUseFailure` | `session.error` | `tool_execution_end` (`isError`) |
+| Needs attention | `Notification` | `permission.asked` | *not supported* |
+| Session exit | *not supported* | *not supported* | `session_shutdown` |
 
 ## Sound Categories
 

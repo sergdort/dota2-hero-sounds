@@ -44,14 +44,21 @@ const CATEGORIES = ${categories};
 
 const ALL_SOUNDS = Object.values(CATEGORIES).flat();
 
+const COOLDOWN_MS = 3000;
+let lastPlayedAt = 0;
+
 function randomPick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
 function playSound(category) {
+  const now = Date.now();
+  if (now - lastPlayedAt < COOLDOWN_MS) return;
   const sounds = CATEGORIES[category] ?? ALL_SOUNDS;
+  if (sounds.length === 0) return;
   const soundFile = randomPick(sounds);
   const soundPath = SOUNDS_DIR + "/" + soundFile;
+  lastPlayedAt = now;
   execFile("afplay", [soundPath], () => {});
 }
 

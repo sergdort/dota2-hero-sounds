@@ -64,14 +64,26 @@ function randomPick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
+/** Cooldown in ms to prevent overlapping sounds. */
+const COOLDOWN_MS = 3000
+
+/** Timestamp of the last sound played. */
+let lastPlayedAt = 0
+
 /**
  * Play a sound from the given category.
  * Picks a random sound from the category, or from all sounds if category is unknown.
  * Fires and forgets — does not block.
+ * Debounced: skips if a sound was played within the last 3 seconds.
  *
  * @param category - One of: success, error, attention, start
  */
 export function playSound(category: string): void {
+  const now = Date.now()
+  if (now - lastPlayedAt < COOLDOWN_MS) {
+    return
+  }
+
   const categories = getCategories()
   const sounds = categories[category] ?? getAllSounds()
 
@@ -87,6 +99,8 @@ export function playSound(category: string): void {
     process.stderr.write(`dota2-code-sounds: sound file not found: ${soundPath}\n`)
     return
   }
+
+  lastPlayedAt = now
 
   // Fire and forget — detached so it doesn't block the parent process
   const child = spawn('afplay', [soundPath], {

@@ -15,6 +15,12 @@ import {
   isOpenCodeAvailable,
   uninstallOpenCodePlugin,
 } from './opencode-plugin.js'
+import {
+  getPiExtensionPath,
+  installPiExtension,
+  isPiAvailable,
+  uninstallPiExtension,
+} from './pi-extension.js'
 import { CATEGORIES, listSounds, playSound } from './play-sound.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -34,7 +40,7 @@ const program = new Command()
 
 program
   .name('dota2-code-sounds')
-  .description('Dota 2 Axe voice notifications for Claude Code and OpenCode')
+  .description('Dota 2 hero voice notifications for Claude Code, OpenCode, and Pi')
   .version('26.3.18')
 
 // ── install ──────────────────────────────────────────────────────────
@@ -44,11 +50,13 @@ program
   .description('Install hooks/plugins for detected tools')
   .option('--claude', 'Install Claude Code hooks only')
   .option('--opencode', 'Install OpenCode plugin only')
+  .option('--pi', 'Install Pi coding agent extension only')
   .option('--all', 'Install for all supported tools')
-  .action(async (opts: { claude?: boolean; opencode?: boolean; all?: boolean }) => {
+  .action(async (opts: { claude?: boolean; opencode?: boolean; pi?: boolean; all?: boolean }) => {
     const wantClaude = opts.claude || opts.all
     const wantOpenCode = opts.opencode || opts.all
-    const autoDetect = !wantClaude && !wantOpenCode
+    const wantPi = opts.pi || opts.all
+    const autoDetect = !wantClaude && !wantOpenCode && !wantPi
 
     let installedAny = false
 
@@ -86,12 +94,30 @@ program
       }
     }
 
+    // Pi
+    const piAvailable = isPiAvailable()
+    const shouldInstallPi = wantPi || (autoDetect && piAvailable)
+
+    if (shouldInstallPi) {
+      if (!piAvailable) {
+        console.error('Error: Pi config directory (~/.pi/agent/) not found. Is Pi installed?')
+      } else {
+        installPiExtension()
+        console.log('[+] Pi extension installed')
+        console.log(`    Extension: ${getPiExtensionPath()}`)
+        installedAny = true
+      }
+    }
+
     if (!installedAny) {
-      console.log('No supported tools detected. Use --claude or --opencode to force install.')
+      console.log(
+        'No supported tools detected. Use --claude, --opencode, or --pi to force install.',
+      )
       console.log('')
       console.log('Supported tools:')
       console.log('  Claude Code  (~/.claude/)')
       console.log('  OpenCode     (~/.config/opencode/)')
+      console.log('  Pi           (~/.pi/agent/)')
       process.exitCode = 1
       return
     }
@@ -107,8 +133,9 @@ program
   .description('Remove all hooks and plugins')
   .option('--claude', 'Remove Claude Code hooks only')
   .option('--opencode', 'Remove OpenCode plugin only')
-  .action((opts: { claude?: boolean; opencode?: boolean }) => {
-    const removeAll = !opts.claude && !opts.opencode
+  .option('--pi', 'Remove Pi extension only')
+  .action((opts: { claude?: boolean; opencode?: boolean; pi?: boolean }) => {
+    const removeAll = !opts.claude && !opts.opencode && !opts.pi
 
     if (removeAll || opts.claude) {
       uninstallClaudeHooks()
@@ -118,6 +145,11 @@ program
     if (removeAll || opts.opencode) {
       uninstallOpenCodePlugin()
       console.log('[-] OpenCode plugin removed')
+    }
+
+    if (removeAll || opts.pi) {
+      uninstallPiExtension()
+      console.log('[-] Pi extension removed')
     }
 
     console.log('')

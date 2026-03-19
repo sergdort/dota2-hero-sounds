@@ -1,7 +1,7 @@
 {
   "name": "dota2-code-sounds",
   "version": "26.3.18",
-  "description": "Dota 2 Axe voice line notifications for Claude Code and OpenCode",
+  "description": "Dota 2 hero voice line notifications for Claude Code, OpenCode, and Pi",
   "type": "module",
   "bin": {
     "dota2-code-sounds": "./dist/cli.js"
@@ -19,6 +19,7 @@
     "start": "node dist/cli.js",
     "start:claude": "node dist/cli.js install --claude",
     "start:opencode": "node dist/cli.js install --opencode",
+    "start:pi": "node dist/cli.js install --pi",
     "start:all": "node dist/cli.js install --all",
     "prepublishOnly": "pnpm run build"
   },
@@ -29,6 +30,7 @@
     "sounds",
     "claude-code",
     "opencode",
+    "pi",
     "cli"
   ],
   "license": "MIT",

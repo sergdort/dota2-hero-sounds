@@ -1,6 +1,6 @@
 # dota2-code-sounds
 
-Dota 2 hero voice line notifications for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [OpenCode](https://opencode.ai). Get notified with voice lines from Axe, Crystal Maiden, Pudge, Zeus, and many more when your AI coding assistant completes tasks, hits errors, or needs your attention.
+Dota 2 hero voice line notifications for [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [OpenCode](https://opencode.ai), and [Pi](https://pi.dev). Get notified with voice lines from Axe, Crystal Maiden, Pudge, Zeus, and many more when your AI coding assistant completes tasks, hits errors, or needs your attention.
 
 ## Quick Start
 
@@ -13,7 +13,8 @@ This auto-detects which tools you have installed and configures them. Use flags 
 ```bash
 npx dota2-code-sounds install --claude     # Claude Code only
 npx dota2-code-sounds install --opencode   # OpenCode only
-npx dota2-code-sounds install --all        # Both
+npx dota2-code-sounds install --pi         # Pi only
+npx dota2-code-sounds install --all        # All three
 ```
 
 ## How It Works
@@ -27,7 +28,7 @@ When events occur in your coding tool, a random hero speaks:
 | Needs attention | `attention` | "Come to Pudge!", "Prepare thyself.", "Agony awaits." |
 | Session start | `start` | "Let the carnage begin!", "Storm Spirit is alive!", "Your God has arrived." |
 
-A random sound is picked from the matching category each time.
+A random sound is picked from the matching category each time. Sounds have a 3-second cooldown to prevent overlapping voice lines.
 
 ## CLI Commands
 
@@ -53,6 +54,13 @@ dota2-code-sounds help        # Show help
 - `permission.asked` → plays attention sound
 - Plugin init → plays start sound (session.created fires too early)
 
+**Pi** — Extension installed via `pi install` as a Pi package:
+- `session_start` → plays start sound
+- `agent_end` → plays success sound
+- `tool_execution_end` (when `isError`) → plays error sound
+- `session_shutdown` → plays error sound
+- *Attention sound not available* — Pi has no permission/notification event
+
 ## Uninstall
 
 ```bash
@@ -77,7 +85,7 @@ Browse the full collection of Dota 2 hero voice lines at the [Dota 2 Wiki Audio 
 
 - **macOS** (uses `afplay` for audio playback)
 - **Node.js** 18+
-- Claude Code and/or OpenCode installed
+- Claude Code, OpenCode, and/or Pi installed
 
 ## License
 
