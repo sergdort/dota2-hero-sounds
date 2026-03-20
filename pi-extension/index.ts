@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process'
-import { existsSync, readdirSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { ExtensionAPI } from '@mariozechner/pi-coding-agent'
@@ -47,6 +48,27 @@ function getCategories(): Record<string, string[]> {
   return _categories
 }
 
+function getConfiguredHeroes(): string[] {
+  try {
+    const configPath = join(homedir(), '.config', 'dota2-sounds', 'config.json')
+    if (!existsSync(configPath)) return []
+    const raw = readFileSync(configPath, 'utf-8')
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed.heroes)) return parsed.heroes
+    return []
+  } catch {
+    return []
+  }
+}
+
+function filterByHeroes(sounds: string[], heroes: string[]): string[] {
+  if (heroes.length === 0) return sounds
+  return sounds.filter((s) => {
+    const base = s.split('/').pop() || ''
+    return heroes.some((h) => base.startsWith(`Vo_${h}_`))
+  })
+}
+
 const COOLDOWN_MS = 3000
 let lastPlayedAt = 0
 
@@ -58,7 +80,12 @@ function playSound(category: string): void {
   const now = Date.now()
   if (now - lastPlayedAt < COOLDOWN_MS) return
   const categories = getCategories()
-  const sounds = categories[category] ?? Object.values(categories).flat()
+  let sounds = categories[category] ?? Object.values(categories).flat()
+  const heroes = getConfiguredHeroes()
+  if (heroes.length > 0) {
+    const filtered = filterByHeroes(sounds, heroes)
+    if (filtered.length > 0) sounds = filtered
+  }
   if (sounds.length === 0) return
   const soundPath = randomPick(sounds)
   lastPlayedAt = now

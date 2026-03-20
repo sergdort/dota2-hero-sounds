@@ -19,6 +19,10 @@ node dist/cli.js install --opencode # install OpenCode plugin
 node dist/cli.js install --pi       # install Pi extension
 node dist/cli.js install --all      # install for all tools
 node dist/cli.js uninstall          # remove all hooks/plugins
+node dist/cli.js hero list          # show available heroes with per-category counts
+node dist/cli.js hero set axe pudge # set preferred heroes
+node dist/cli.js hero show          # show current hero preference
+node dist/cli.js hero clear         # clear preference (use all heroes)
 pnpm lint                           # check for lint/format issues
 pnpm check                          # auto-fix lint/format issues
 ```
@@ -27,9 +31,11 @@ pnpm check                          # auto-fix lint/format issues
 
 ```
 src/
-  play-sound.ts     — Core: category definitions, random selection, afplay
+  play-sound.ts     — Core: category definitions, random selection, afplay, hero filtering
   play.ts           — Standalone entry point for hooks: node dist/play.js <category>
-  cli.ts            — Commander.js CLI (install/uninstall/test/list)
+  cli.ts            — Commander.js CLI (install/uninstall/test/list/hero)
+  config.ts         — Reads/writes hero config from ~/.config/dota2-sounds/config.json
+  heroes.ts         — Hero extraction from filenames, filtering, listing
   claude-hooks.ts   — Reads/writes Claude Code hooks in ~/.claude/settings.json
   opencode-plugin.ts — Generates self-contained OpenCode plugin to ~/.config/opencode/plugins/
   pi-extension.ts   — Installs/removes Pi extension via `pi install`/`pi remove`
@@ -53,6 +59,9 @@ sounds/
 - Pi extension plays attention sound only for dangerous bash commands (rm, sudo, chmod, etc.)
 - Sound playback is async/non-blocking (detached `afplay` process)
 - All sound players have a 3-second debounce cooldown to prevent overlapping sounds
+- Hero preferences stored in `~/.config/dota2-sounds/config.json`, read at runtime by all tools
+- Hero name extracted from filename prefix `Vo_<hero>_` — first segment after `Vo_` is the hero key
+- If configured heroes have no sounds for a category, falls back to all heroes
 
 ### Event mapping per tool
 
@@ -85,9 +94,9 @@ whisper-cli -m /opt/homebrew/share/whisper-cpp/ggml-base.en.bin --no-timestamps 
 ## Contributing
 
 1. Add new `.mp3` files to the appropriate `sounds/<category>/` subdirectory
-2. Add the path (e.g. `"success/new-sound.mp3"`) to the matching category array in `src/play-sound.ts`
+2. Sound files are discovered at runtime — no code changes needed
 3. Run `pnpm build` to compile
-4. Run `node dist/cli.js install` to regenerate hooks/plugin with updated categories
+4. Run `node dist/cli.js install` to regenerate hooks/plugin
 5. macOS only (uses `afplay`); cross-platform support planned for future
 
 ## Agent notes

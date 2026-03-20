@@ -30,6 +30,19 @@ When events occur in your coding tool, a random hero speaks:
 
 A random sound is picked from the matching category each time. Sounds have a 3-second cooldown to prevent overlapping voice lines.
 
+## Hero Selection
+
+By default, sounds are picked randomly from all heroes. You can set preferred heroes:
+
+```bash
+npx dota2-code-sounds hero list          # Show available heroes with sound counts
+npx dota2-code-sounds hero set axe pudge # Only play Axe and Pudge sounds
+npx dota2-code-sounds hero show          # Show current preference
+npx dota2-code-sounds hero clear         # Reset to all heroes
+```
+
+Hero preferences are saved to `~/.config/dota2-sounds/config.json` and take effect immediately — no reinstall needed. If a selected hero has no sounds for a category, it falls back to all heroes for that category.
+
 ## CLI Commands
 
 ```bash
@@ -37,6 +50,8 @@ dota2-code-sounds install     # Install hooks/plugins
 dota2-code-sounds uninstall   # Remove everything cleanly
 dota2-code-sounds test        # Play one sound per category
 dota2-code-sounds list        # Show all sounds by category
+dota2-code-sounds hero list   # Show heroes with per-category counts
+dota2-code-sounds hero set    # Set preferred heroes
 dota2-code-sounds help        # Show help
 ```
 

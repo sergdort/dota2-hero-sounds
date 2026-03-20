@@ -9,6 +9,8 @@ import {
   isClaudeCodeAvailable,
   uninstallClaudeHooks,
 } from './claude-hooks.js'
+import { readConfig, writeConfig } from './config.js'
+import { filterSoundsByHeroes, getAvailableHeroes } from './heroes.js'
 import {
   getOpenCodePluginPath,
   installOpenCodePlugin,
@@ -190,15 +192,97 @@ program
   .command('list')
   .description('Show all available sounds by category')
   .action(() => {
-    console.log('Dota 2 Sound Categories\n')
-    for (const [cat, sounds] of Object.entries(listSounds())) {
-      console.log(`  ${cat}:`)
-      for (const sound of sounds) {
+    const config = readConfig()
+    const allSounds = listSounds()
+
+    if (config.heroes.length > 0) {
+      console.log(`Dota 2 Sound Categories (filtered: ${config.heroes.join(', ')})\n`)
+    } else {
+      console.log('Dota 2 Sound Categories\n')
+    }
+
+    for (const [cat, sounds] of Object.entries(allSounds)) {
+      const filtered =
+        config.heroes.length > 0 ? filterSoundsByHeroes(sounds, config.heroes) : sounds
+      console.log(`  ${cat}: (${filtered.length} sounds)`)
+      for (const sound of filtered) {
         const name = sound.replace(/^.*\//, '').replace('.mp3', '')
         console.log(`    - ${name}`)
       }
       console.log('')
     }
+  })
+
+// ── hero ─────────────────────────────────────────────────────────────
+
+const hero = program.command('hero').description('Manage hero preferences')
+
+hero
+  .command('set')
+  .description('Set preferred heroes')
+  .argument('<heroes...>', 'Hero keys (e.g., axe pudge lina)')
+  .action((heroes: string[]) => {
+    const available = getAvailableHeroes()
+    const validKeys = new Set(available.map((h) => h.key))
+    const invalid = heroes.filter((h) => !validKeys.has(h))
+
+    if (invalid.length > 0) {
+      console.error(`Unknown hero(es): ${invalid.join(', ')}`)
+      console.error(`Run 'dota2-code-sounds hero list' to see available heroes`)
+      process.exitCode = 1
+      return
+    }
+
+    writeConfig({ heroes })
+    console.log(`Heroes set: ${heroes.join(', ')}`)
+  })
+
+hero
+  .command('list')
+  .description('Show available heroes with sound counts')
+  .action(() => {
+    const heroes = getAvailableHeroes()
+    const config = readConfig()
+    const selected = new Set(config.heroes)
+
+    console.log('Available Heroes\n')
+    console.log(
+      `  ${'Hero'.padEnd(20)} ${'Success'.padEnd(9)} ${'Error'.padEnd(9)} ${'Attention'.padEnd(11)} ${'Start'.padEnd(9)} Total`,
+    )
+    console.log(
+      `  ${'─'.repeat(20)} ${'─'.repeat(9)} ${'─'.repeat(9)} ${'─'.repeat(11)} ${'─'.repeat(9)} ${'─'.repeat(5)}`,
+    )
+
+    for (const h of heroes) {
+      const marker = selected.has(h.key) ? ' *' : ''
+      console.log(
+        `  ${(h.key + marker).padEnd(20)} ${String(h.counts.success).padEnd(9)} ${String(h.counts.error).padEnd(9)} ${String(h.counts.attention).padEnd(11)} ${String(h.counts.start).padEnd(9)} ${h.total}`,
+      )
+    }
+
+    if (selected.size > 0) {
+      console.log(`\n  * = selected`)
+    }
+  })
+
+hero
+  .command('show')
+  .description('Show current hero preference')
+  .action(() => {
+    const config = readConfig()
+    if (config.heroes.length === 0) {
+      console.log('No hero preference set (using all heroes)')
+    } else {
+      console.log(`Current heroes: ${config.heroes.join(', ')}`)
+    }
+  })
+
+hero
+  .command('clear')
+  .description('Clear hero preference (use all heroes)')
+  .action(() => {
+    writeConfig({ heroes: [] })
+    console.log('Hero preference cleared (using all heroes)')
   })
 
 // ── parse ────────────────────────────────────────────────────────────

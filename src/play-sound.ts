@@ -2,6 +2,8 @@ import { spawn } from 'node:child_process'
 import { existsSync, readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { readConfig } from './config.js'
+import { filterSoundsByHeroes } from './heroes.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -85,7 +87,15 @@ export function playSound(category: string): void {
   }
 
   const categories = getCategories()
-  const sounds = categories[category] ?? getAllSounds()
+  let sounds = categories[category] ?? getAllSounds()
+
+  const { heroes } = readConfig()
+  if (heroes.length > 0) {
+    const filtered = filterSoundsByHeroes(sounds, heroes)
+    if (filtered.length > 0) {
+      sounds = filtered
+    }
+  }
 
   if (sounds.length === 0) {
     process.stderr.write(`dota2-code-sounds: no sounds found for category: ${category}\n`)
