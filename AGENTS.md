@@ -23,6 +23,8 @@ node dist/cli.js hero list          # show available heroes with per-category co
 node dist/cli.js hero set axe pudge # set preferred heroes
 node dist/cli.js hero show          # show current hero preference
 node dist/cli.js hero clear         # clear preference (use all heroes)
+pnpm test                           # run unit tests
+pnpm test:watch                     # run tests in watch mode
 pnpm lint                           # check for lint/format issues
 pnpm check                          # auto-fix lint/format issues
 ```

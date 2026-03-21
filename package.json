@@ -21,6 +21,8 @@
     "start:opencode": "node dist/cli.js install --opencode",
     "start:pi": "node dist/cli.js install --pi",
     "start:all": "node dist/cli.js install --all",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "prepublishOnly": "pnpm run build"
   },
   "keywords": [
@@ -40,7 +42,9 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.8",
     "@types/node": "^25.5.0",
-    "typescript": "^5.7.0"
+    "@vitest/coverage-v8": "^4.1.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.0"
   },
   "dependencies": {
     "commander": "^14.0.3"

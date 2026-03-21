@@ -287,4 +287,9 @@ hero
 
 // ── parse ────────────────────────────────────────────────────────────
 
-program.parse()
+export { program }
+
+const isDirectRun = process.argv[1]?.endsWith('cli.js')
+if (isDirectRun) {
+  program.parse()
+}
