@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { Command } from 'commander'
 import {
   getClaudeSettingsPath,
@@ -11,6 +9,13 @@ import {
 } from './claude-hooks.js'
 import { readConfig, writeConfig } from './config.js'
 import { filterSoundsByHeroes, getAvailableHeroes } from './heroes.js'
+import {
+  copyRuntimeFiles,
+  getInstalledPiExtensionDir,
+  getInstalledPlayScript,
+  getInstalledSoundsDir,
+  removeRuntimeFiles,
+} from './install-files.js'
 import {
   getOpenCodePluginPath,
   installOpenCodePlugin,
@@ -25,11 +30,6 @@ import {
 } from './pi-extension.js'
 import { CATEGORIES, listSounds, playSound } from './play-sound.js'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-
-const PLAY_SCRIPT_PATH = join(__dirname, 'play.js')
-
 // ── Helpers ──────────────────────────────────────────────────────────
 
 function sleep(ms: number): Promise<void> {
@@ -43,7 +43,7 @@ const program = new Command()
 program
   .name('dota2-code-sounds')
   .description('Dota 2 hero voice notifications for Claude Code, OpenCode, and Pi')
-  .version('26.3.22')
+  .version('26.3.23')
 
 // ── install ──────────────────────────────────────────────────────────
 
@@ -62,6 +62,11 @@ program
 
     let installedAny = false
 
+    // Copy runtime files to permanent location first
+    copyRuntimeFiles()
+    const playScriptPath = getInstalledPlayScript()
+    const soundsDir = getInstalledSoundsDir()
+
     // Claude Code
     const claudeAvailable = isClaudeCodeAvailable()
     const shouldInstallClaude = wantClaude || (autoDetect && claudeAvailable)
@@ -72,7 +77,7 @@ program
           'Error: Claude Code config directory (~/.claude/) not found. Is Claude Code installed?',
         )
       } else {
-        installClaudeHooks(PLAY_SCRIPT_PATH)
+        installClaudeHooks(playScriptPath)
         console.log('[+] Claude Code hooks installed')
         console.log(`    Config: ${getClaudeSettingsPath()}`)
         installedAny = true
@@ -89,7 +94,7 @@ program
           'Error: OpenCode config directory (~/.config/opencode/) not found. Is OpenCode installed?',
         )
       } else {
-        installOpenCodePlugin()
+        installOpenCodePlugin(soundsDir)
         console.log('[+] OpenCode plugin installed')
         console.log(`    Plugin: ${getOpenCodePluginPath()}`)
         installedAny = true
@@ -104,7 +109,7 @@ program
       if (!piAvailable) {
         console.error('Error: Pi config directory (~/.pi/agent/) not found. Is Pi installed?')
       } else {
-        installPiExtension()
+        installPiExtension(getInstalledPiExtensionDir())
         console.log('[+] Pi extension installed')
         console.log(`    Extension: ${getPiExtensionPath()}`)
         installedAny = true
@@ -152,6 +157,11 @@ program
     if (removeAll || opts.pi) {
       uninstallPiExtension()
       console.log('[-] Pi extension removed')
+    }
+
+    if (removeAll) {
+      removeRuntimeFiles()
+      console.log('[-] Runtime files removed')
     }
 
     console.log('')

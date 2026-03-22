@@ -1,6 +1,6 @@
 {
   "name": "dota2-code-sounds",
-  "version": "26.3.22",
+  "version": "26.3.23",
   "description": "Dota 2 hero voice line notifications for Claude Code, OpenCode, and Pi",
   "type": "module",
   "packageManager": "pnpm@10.16.1",

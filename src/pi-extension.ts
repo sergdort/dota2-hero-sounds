@@ -33,8 +33,8 @@ export function isPiAvailable(): boolean {
  * Install the Pi extension using `pi install <path>`.
  * This installs the pi-extension/ directory as a proper Pi package.
  */
-export function installPiExtension(): void {
-  const extensionDir = getPiExtensionDir()
+export function installPiExtension(extensionDirOverride?: string): void {
+  const extensionDir = extensionDirOverride ?? getPiExtensionDir()
   try {
     execSync(`pi install "${extensionDir}"`, { stdio: 'pipe' })
   } catch {

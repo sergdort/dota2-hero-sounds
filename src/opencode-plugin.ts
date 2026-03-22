@@ -143,16 +143,16 @@ export const Dota2Sounds = async ({ project, client, $, directory, worktree }) =
 /**
  * Install the OpenCode plugin to ~/.config/opencode/plugins/.
  */
-export function installOpenCodePlugin(): void {
+export function installOpenCodePlugin(soundsDir?: string): void {
   const pluginsDir = getOpenCodePluginsDir()
   const pluginPath = getOpenCodePluginPath()
-  const soundsDir = getSoundsDir()
+  const resolvedSoundsDir = soundsDir ?? getSoundsDir()
 
   if (!existsSync(pluginsDir)) {
     mkdirSync(pluginsDir, { recursive: true })
   }
 
-  const source = generatePluginSource(soundsDir)
+  const source = generatePluginSource(resolvedSoundsDir)
   writeFileSync(pluginPath, source, 'utf-8')
 }
 
