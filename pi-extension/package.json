@@ -1,6 +1,6 @@
 {
   "name": "dota2-code-sounds-pi",
-  "version": "26.3.23",
+  "version": "26.3.22.2",
   "type": "module",
   "description": "Dota 2 hero voice line notifications for Pi coding agent",
   "license": "MIT",

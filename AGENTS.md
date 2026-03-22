@@ -101,6 +101,16 @@ whisper-cli -m /opt/homebrew/share/whisper-cpp/ggml-base.en.bin --no-timestamps 
 4. Run `node dist/cli.js install` to regenerate hooks/plugin
 5. macOS only (uses `afplay`); cross-platform support planned for future
 
+## Versioning
+
+Version format is `YY.M.DD[.patch]` based on the current date. Examples:
+- First release on March 22, 2026: `26.3.22`
+- Second release same day: `26.3.22.2`
+- Third release same day: `26.3.22.3`
+- First release next day: `26.3.23`
+
+Version must be updated in three places: `package.json`, `src/cli.ts` (`.version()`), and `pi-extension/package.json`.
+
 ## Agent notes
 
 - Every time you learn something new, or how to do something in the codebase, if you make a mistake that the user corrects, if you find yourself running commands that are often wrong and have to tweak them: write all of this down in `.agents/notes.md`. This is a file just for you that your user won't read.
