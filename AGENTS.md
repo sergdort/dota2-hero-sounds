@@ -1,4 +1,4 @@
-# dota2-code-sounds
+# dota2-hero-sounds
 
 Dota 2 hero voice line notifications for Claude Code, OpenCode, and Pi.
 
@@ -54,7 +54,7 @@ sounds/
 ### Key implementation details
 
 - Claude Code hooks call `node <abs-path>/dist/play.js <category>` with absolute paths resolved at install time
-- Hooks are tagged with `# dota2-code-sounds` comment for clean install/uninstall
+- Hooks are tagged with `# dota2-hero-sounds` comment for clean install/uninstall
 - OpenCode plugin uses `session.status` busy->idle transition for completion detection, not `session.idle`
 - OpenCode plugin plays start sound on plugin init since `session.created` fires before plugin loads
 - Pi extension uses `session_start`, `agent_end`, `tool_execution_end`, and `session_shutdown` events

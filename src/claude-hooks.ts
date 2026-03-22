@@ -6,7 +6,7 @@ import { join } from 'node:path'
  * Marker used to identify hooks added by this package,
  * so we can cleanly uninstall without touching user-defined hooks.
  */
-const HOOK_MARKER = 'dota2-code-sounds'
+const HOOK_MARKER = 'dota2-hero-sounds'
 
 interface HookEntry {
   matcher: string
@@ -78,7 +78,7 @@ export function installClaudeHooks(playScriptPath: string): void {
     settings = JSON.parse(raw) as ClaudeSettings
   }
 
-  // Remove any existing dota2-code-sounds hooks first (clean reinstall)
+  // Remove any existing dota2-hero-sounds hooks first (clean reinstall)
   if (settings.hooks) {
     for (const event of Object.keys(settings.hooks)) {
       settings.hooks[event] = settings.hooks[event].filter(
@@ -108,7 +108,7 @@ export function installClaudeHooks(playScriptPath: string): void {
 }
 
 /**
- * Remove all dota2-code-sounds hooks from ~/.claude/settings.json.
+ * Remove all dota2-hero-sounds hooks from ~/.claude/settings.json.
  */
 export function uninstallClaudeHooks(): void {
   const settingsPath = getClaudeSettingsPath()

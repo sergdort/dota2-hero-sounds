@@ -98,7 +98,7 @@ export function playSound(category: string): void {
   }
 
   if (sounds.length === 0) {
-    process.stderr.write(`dota2-code-sounds: no sounds found for category: ${category}\n`)
+    process.stderr.write(`dota2-hero-sounds: no sounds found for category: ${category}\n`)
     return
   }
 
@@ -106,7 +106,7 @@ export function playSound(category: string): void {
   const soundPath = join(getSoundsDir(), soundFile)
 
   if (!existsSync(soundPath)) {
-    process.stderr.write(`dota2-code-sounds: sound file not found: ${soundPath}\n`)
+    process.stderr.write(`dota2-hero-sounds: sound file not found: ${soundPath}\n`)
     return
   }
 

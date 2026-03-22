@@ -65,7 +65,7 @@ describe('installClaudeHooks', () => {
     // Each event has one hook entry with our marker
     for (const event of ['Stop', 'PostToolUseFailure', 'Notification', 'SessionStart']) {
       expect(written.hooks[event]).toHaveLength(1)
-      expect(written.hooks[event][0].hooks[0].command).toContain('dota2-code-sounds')
+      expect(written.hooks[event][0].hooks[0].command).toContain('dota2-hero-sounds')
       expect(written.hooks[event][0].hooks[0].command).toContain('/path/to/play.js')
     }
   })
@@ -85,7 +85,7 @@ describe('installClaudeHooks', () => {
     // Should have the user hook + our hook
     expect(written.hooks.Stop).toHaveLength(2)
     expect(written.hooks.Stop[0].hooks[0].command).toBe('echo user-hook')
-    expect(written.hooks.Stop[1].hooks[0].command).toContain('dota2-code-sounds')
+    expect(written.hooks.Stop[1].hooks[0].command).toContain('dota2-hero-sounds')
   })
 
   it('replaces existing dota2 hooks on reinstall', () => {
@@ -94,7 +94,7 @@ describe('installClaudeHooks', () => {
         Stop: [
           {
             matcher: '',
-            hooks: [{ type: 'command', command: 'node old/play.js success # dota2-code-sounds' }],
+            hooks: [{ type: 'command', command: 'node old/play.js success # dota2-hero-sounds' }],
           },
         ],
       },
@@ -142,7 +142,7 @@ describe('uninstallClaudeHooks', () => {
           { matcher: '', hooks: [{ type: 'command', command: 'echo user-hook' }] },
           {
             matcher: '',
-            hooks: [{ type: 'command', command: 'node play.js success # dota2-code-sounds' }],
+            hooks: [{ type: 'command', command: 'node play.js success # dota2-hero-sounds' }],
           },
         ],
       },
@@ -164,7 +164,7 @@ describe('uninstallClaudeHooks', () => {
         Stop: [
           {
             matcher: '',
-            hooks: [{ type: 'command', command: 'node play.js success # dota2-code-sounds' }],
+            hooks: [{ type: 'command', command: 'node play.js success # dota2-hero-sounds' }],
           },
         ],
       },

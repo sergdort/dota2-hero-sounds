@@ -41,7 +41,7 @@ function sleep(ms: number): Promise<void> {
 const program = new Command()
 
 program
-  .name('dota2-code-sounds')
+  .name('dota2-hero-sounds')
   .description('Dota 2 hero voice notifications for Claude Code, OpenCode, and Pi')
   .version('26.3.22.2')
 
@@ -238,7 +238,7 @@ hero
 
     if (invalid.length > 0) {
       console.error(`Unknown hero(es): ${invalid.join(', ')}`)
-      console.error(`Run 'dota2-code-sounds hero list' to see available heroes`)
+      console.error(`Run 'dota2-hero-sounds hero list' to see available heroes`)
       process.exitCode = 1
       return
     }
