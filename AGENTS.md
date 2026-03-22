@@ -95,11 +95,12 @@ whisper-cli -m /opt/homebrew/share/whisper-cpp/ggml-base.en.bin --no-timestamps 
 
 ## Contributing
 
-1. Add new `.mp3` files to the appropriate `sounds/<category>/` subdirectory
+1. Add new `.mp3` files to the appropriate `sounds/<category>/` subdirectory (any `.mp3` works, not just Dota 2)
 2. Sound files are discovered at runtime — no code changes needed
 3. Run `pnpm build` to compile
-4. Run `node dist/cli.js install` to regenerate hooks/plugin
+4. Run `node dist/cli.js install` to copy sounds to `~/.config/dota2-sounds/` and regenerate hooks/plugin
 5. macOS only (uses `afplay`); cross-platform support planned for future
+6. Note: `hero set` filtering only works with `Vo_<hero>_*.mp3` naming — custom sounds without this prefix are excluded during hero filtering
 
 ## Versioning
 

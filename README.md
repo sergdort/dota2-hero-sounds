@@ -86,15 +86,23 @@ This cleanly removes only the hooks/plugins added by this package — your other
 
 ## Adding Custom Sounds
 
-1. Add `.mp3` files to the appropriate `sounds/<category>/` subdirectory
-2. Sound files are discovered at runtime — no code changes needed
-3. Re-run `dota2-hero-sounds install` to update the OpenCode plugin with new sounds
+You're not limited to Dota 2 voice lines — any `.mp3` file works. Movie quotes, meme sounds, game SFX — drop them in and go.
 
-Sound files should follow the naming convention `Vo_<hero>_<shortname>_<type>_<num>.mp3` to enable future hero-based filtering.
+Add `.mp3` files to the matching category folder at `~/.config/dota2-sounds/sounds/<category>/`:
+
+```bash
+# Example: add a custom success sound
+cp my-sound.mp3 ~/.config/dota2-sounds/sounds/success/
+```
+
+Changes take effect immediately — no reinstall needed. If you're contributing to the project itself, add files to the source `sounds/<category>/` directory and re-run `dota2-hero-sounds install`.
+
+**Note on hero selection:** The `hero set` command only filters sounds that follow the Dota 2 naming convention (`Vo_<hero>_*.mp3`). Custom sounds without this prefix will be excluded when hero filtering is active. If your preferred heroes have no sounds for a category, all sounds (including custom ones) are used as a fallback.
 
 ## Finding More Sounds
 
-Browse the full collection of Dota 2 hero voice lines at the [Dota 2 Wiki Audio Category](https://dota2.fandom.com/wiki/Category:Audio). Each hero has hundreds of voice lines covering spawns, kills, abilities, and more.
+- **Dota 2 voice lines:** Browse the [Dota 2 Wiki Audio Category](https://dota2.fandom.com/wiki/Category:Audio) — hundreds of lines per hero covering spawns, kills, abilities, and more.
+- **Any other sounds:** Check out [101 Soundboards](https://www.101soundboards.com) for a huge collection of soundboards from movies, games, TV shows, memes, and more.
 
 ## Requirements
 
