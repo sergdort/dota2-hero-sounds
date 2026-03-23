@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process'
 import { existsSync, readdirSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { readConfig } from './config.js'
@@ -22,6 +23,12 @@ export function getSoundsDir(): string {
   const { soundsDir } = readConfig()
   if (soundsDir) {
     return soundsDir
+  }
+  // Prefer installed sounds dir over package-relative path
+  // so user-added sounds in ~/.config/dota2-sounds/sounds/ are picked up
+  const installedDir = join(homedir(), '.config', 'dota2-sounds', 'sounds')
+  if (existsSync(installedDir)) {
+    return installedDir
   }
   return join(__dirname, '..', 'sounds')
 }

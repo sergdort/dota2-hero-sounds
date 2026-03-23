@@ -106,6 +106,7 @@ whisper-cli -m /opt/homebrew/share/whisper-cpp/ggml-base.en.bin --no-timestamps 
 4. Run `node dist/cli.js install` to copy sounds to `~/.config/dota2-sounds/` and regenerate hooks/plugin
 5. macOS only (uses `afplay`); cross-platform support planned for future
 6. Note: `hero set` filtering only works with `Vo_<hero>_*.mp3` naming — custom sounds without this prefix are excluded during hero filtering
+7. The default sounds dir (`~/.config/dota2-sounds/sounds/`) is overwritten on every install. Users adding their own sounds should use `sounds set <path>` to point to a custom directory
 
 ## Versioning
 

@@ -45,7 +45,7 @@ const program = new Command()
 program
   .name('dota2-hero-sounds')
   .description('Dota 2 hero voice notifications for Claude Code, OpenCode, and Pi')
-  .version('1.1.0')
+  .version('1.1.1')
 
 // ── install ──────────────────────────────────────────────────────────
 
@@ -68,6 +68,12 @@ program
     copyRuntimeFiles()
     const playScriptPath = getInstalledPlayScript()
     const soundsDir = getInstalledSoundsDir()
+
+    // Persist default sounds dir so users can see where sounds are loaded from
+    const currentConfig = readConfig()
+    if (!currentConfig.soundsDir) {
+      writeConfig({ soundsDir })
+    }
 
     // Claude Code
     const claudeAvailable = isClaudeCodeAvailable()
@@ -131,6 +137,14 @@ program
       return
     }
 
+    console.log('')
+    console.log(`Sounds: ${soundsDir}`)
+    console.log(
+      'Note: Adding custom sounds? Use `dota2-hero-sounds sounds set <path>` to point to your',
+    )
+    console.log(
+      '      own directory — files in the default sounds dir are overwritten on reinstall.',
+    )
     console.log('')
     console.log('Dota 2 Axe is ready. Good luck, have fun!')
   })
@@ -333,10 +347,13 @@ sounds
   .description('Show current sounds directory')
   .action(() => {
     const config = readConfig()
-    if (config.soundsDir) {
+    const defaultDir = getInstalledSoundsDir()
+    if (config.soundsDir && config.soundsDir !== defaultDir) {
       console.log(`Custom sounds directory: ${config.soundsDir}`)
+    } else if (config.soundsDir) {
+      console.log(`Sounds directory (default): ${config.soundsDir}`)
     } else {
-      console.log('No custom sounds directory set (using default)')
+      console.log('No sounds directory set (using package default)')
     }
   })
 
@@ -344,8 +361,14 @@ sounds
   .command('clear')
   .description('Clear custom sounds directory (use default sounds)')
   .action(() => {
-    writeConfig({ soundsDir: undefined })
-    console.log('Custom sounds directory cleared (using default sounds)')
+    const defaultDir = getInstalledSoundsDir()
+    if (existsSync(defaultDir)) {
+      writeConfig({ soundsDir: defaultDir })
+      console.log(`Sounds directory reset to default: ${defaultDir}`)
+    } else {
+      writeConfig({ soundsDir: undefined })
+      console.log('Custom sounds directory cleared (using default)')
+    }
   })
 
 // ── parse ────────────────────────────────────────────────────────────

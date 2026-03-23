@@ -112,14 +112,27 @@ This cleanly removes only the hooks/plugins added by this package — your other
 
 You're not limited to Dota 2 voice lines — any `.mp3` file works. Movie quotes, meme sounds, game SFX — drop them in and go.
 
-Add `.mp3` files to the matching category folder at `~/.config/dota2-sounds/sounds/<category>/`:
+The recommended approach is to use a **custom sounds directory** so your files aren't overwritten when you reinstall or update the package:
 
 ```bash
-# Example: add a custom success sound
-cp my-sound.mp3 ~/.config/dota2-sounds/sounds/success/
+# Create your custom sounds directory with the required category folders
+mkdir -p ~/my-dota-sounds/{success,error,attention,start}
+
+# Copy the default sounds as a starting point
+cp -r ~/.config/dota2-sounds/sounds/* ~/my-dota-sounds/
+
+# Add your custom sounds
+cp my-sound.mp3 ~/my-dota-sounds/success/
+
+# Point the tool to your directory
+npx dota2-hero-sounds sounds set ~/my-dota-sounds
 ```
 
-Changes take effect immediately — no reinstall needed. If you're contributing to the project itself, add files to the source `sounds/<category>/` directory and re-run `dota2-hero-sounds install`.
+Changes take effect immediately — no reinstall needed.
+
+> **Warning:** Files in the default sounds directory (`~/.config/dota2-sounds/sounds/`) are overwritten on every `install` or update. If you add sounds there directly, they will be lost. Use `sounds set` to point to your own directory instead.
+
+If you're contributing to the project itself, add files to the source `sounds/<category>/` directory and re-run `dota2-hero-sounds install`.
 
 **Note on hero selection:** The `hero set` command only filters sounds that follow the Dota 2 naming convention (`Vo_<hero>_*.mp3`). Custom sounds without this prefix will be excluded when hero filtering is active. If your preferred heroes have no sounds for a category, all sounds (including custom ones) are used as a fallback.
 

@@ -1,5 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+vi.mock('node:fs', async (importOriginal) => {
+  const original = await importOriginal<typeof import('node:fs')>()
+  return {
+    ...original,
+    existsSync: vi.fn(original.existsSync),
+  }
+})
+
 // Mock all dependency modules
 vi.mock('./claude-hooks.js', () => ({
   getClaudeSettingsPath: () => '/mock/.claude/settings.json',
@@ -38,6 +46,14 @@ vi.mock('./config.js', () => ({
   writeConfig: vi.fn(),
 }))
 
+vi.mock('./install-files.js', () => ({
+  copyRuntimeFiles: vi.fn(),
+  getInstalledPlayScript: vi.fn(() => '/mock/.config/dota2-sounds/dist/play.js'),
+  getInstalledSoundsDir: vi.fn(() => '/mock/.config/dota2-sounds/sounds'),
+  getInstalledPiExtensionDir: vi.fn(() => '/mock/.config/dota2-sounds/pi-extension'),
+  removeRuntimeFiles: vi.fn(),
+}))
+
 vi.mock('./heroes.js', () => ({
   filterSoundsByHeroes: vi.fn((sounds: string[]) => sounds),
   getAvailableHeroes: vi.fn(() => [
@@ -46,10 +62,14 @@ vi.mock('./heroes.js', () => ({
   ]),
 }))
 
+import { existsSync } from 'node:fs'
 import { installClaudeHooks, isClaudeCodeAvailable, uninstallClaudeHooks } from './claude-hooks.js'
 import { program } from './cli.js'
 import { readConfig, writeConfig } from './config.js'
 import { getAvailableHeroes } from './heroes.js'
+import { getInstalledSoundsDir } from './install-files.js'
+
+const mockExistsSync = vi.mocked(existsSync)
 import {
   installOpenCodePlugin,
   isOpenCodeAvailable,
@@ -295,5 +315,84 @@ describe('test command', () => {
     expect(playSound).not.toHaveBeenCalled()
     expect(errorOutput.join('\n')).toContain('Unknown category: invalid')
     expect(process.exitCode).toBe(1)
+  })
+})
+
+describe('sounds show', () => {
+  it('shows default dir when soundsDir matches installed', async () => {
+    vi.mocked(readConfig).mockReturnValue({
+      heroes: [],
+      soundsDir: '/mock/.config/dota2-sounds/sounds',
+    })
+
+    await run('sounds', 'show')
+
+    expect(logOutput.join('\n')).toContain('Sounds directory (default):')
+  })
+
+  it('shows custom dir when soundsDir differs from installed', async () => {
+    vi.mocked(readConfig).mockReturnValue({
+      heroes: [],
+      soundsDir: '/custom/path/sounds',
+    })
+
+    await run('sounds', 'show')
+
+    expect(logOutput.join('\n')).toContain('Custom sounds directory: /custom/path/sounds')
+  })
+
+  it('shows package default message when no soundsDir set', async () => {
+    vi.mocked(readConfig).mockReturnValue({ heroes: [] })
+
+    await run('sounds', 'show')
+
+    expect(logOutput.join('\n')).toContain('No sounds directory set (using package default)')
+  })
+})
+
+describe('sounds clear', () => {
+  it('resets to installed default when it exists', async () => {
+    mockExistsSync.mockReturnValue(true)
+
+    await run('sounds', 'clear')
+
+    expect(writeConfig).toHaveBeenCalledWith({ soundsDir: '/mock/.config/dota2-sounds/sounds' })
+    expect(logOutput.join('\n')).toContain('Sounds directory reset to default:')
+  })
+
+  it('clears soundsDir when installed dir does not exist', async () => {
+    mockExistsSync.mockReturnValue(false)
+
+    await run('sounds', 'clear')
+
+    expect(writeConfig).toHaveBeenCalledWith({ soundsDir: undefined })
+    expect(logOutput.join('\n')).toContain('Custom sounds directory cleared')
+  })
+})
+
+describe('install persists soundsDir', () => {
+  it('writes soundsDir when not already set', async () => {
+    vi.mocked(isClaudeCodeAvailable).mockReturnValue(true)
+    vi.mocked(readConfig).mockReturnValue({ heroes: [] })
+
+    await run('install', '--claude')
+
+    expect(writeConfig).toHaveBeenCalledWith({
+      soundsDir: '/mock/.config/dota2-sounds/sounds',
+    })
+  })
+
+  it('does not overwrite existing soundsDir', async () => {
+    vi.mocked(isClaudeCodeAvailable).mockReturnValue(true)
+    vi.mocked(readConfig).mockReturnValue({
+      heroes: [],
+      soundsDir: '/custom/sounds',
+    })
+
+    await run('install', '--claude')
+
+    expect(writeConfig).not.toHaveBeenCalledWith(
+      expect.objectContaining({ soundsDir: expect.any(String) }),
+    )
   })
 })
