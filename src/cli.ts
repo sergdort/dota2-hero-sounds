@@ -47,7 +47,7 @@ const program = new Command()
 program
   .name('dota2-hero-sounds')
   .description('Dota 2 hero voice notifications for Claude Code, OpenCode, and Pi')
-  .version('1.1.1')
+  .version('1.2.0')
 
 // ── install ──────────────────────────────────────────────────────────
 
