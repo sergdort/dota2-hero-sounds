@@ -19,17 +19,19 @@ import {
   removeRuntimeFiles,
 } from './install-files.js'
 import {
+  EVENT_DESCRIPTIONS,
+  getEnabledEvents,
+  isNotificationEvent,
+  NOTIFICATION_EVENTS,
+  normalizeEvents,
+} from './notifications.js'
+import {
   getOpenCodePluginPath,
   installOpenCodePlugin,
   isOpenCodeAvailable,
   uninstallOpenCodePlugin,
 } from './opencode-plugin.js'
-import {
-  getPiExtensionPath,
-  installPiExtension,
-  isPiAvailable,
-  uninstallPiExtension,
-} from './pi-extension.js'
+import { installPiExtension, isPiAvailable, uninstallPiExtension } from './pi-extension.js'
 import { CATEGORIES, listSounds, playSound } from './play-sound.js'
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -117,9 +119,10 @@ program
       if (!piAvailable) {
         console.error('Error: Pi config directory (~/.pi/agent/) not found. Is Pi installed?')
       } else {
-        installPiExtension(getInstalledPiExtensionDir())
+        const piExtensionDir = getInstalledPiExtensionDir()
+        installPiExtension(piExtensionDir)
         console.log('[+] Pi extension installed')
-        console.log(`    Extension: ${getPiExtensionPath()}`)
+        console.log(`    Extension: ${piExtensionDir}`)
         installedAny = true
       }
     }
@@ -311,6 +314,90 @@ hero
     console.log('Hero preference cleared (using all heroes)')
   })
 
+// ── notification events ─────────────────────────────────────────────
+
+function validateNotificationEvents(events: string[]): boolean {
+  const invalid = events.filter((event) => !isNotificationEvent(event))
+  if (invalid.length === 0) return true
+
+  console.error(`Unknown event(s): ${invalid.join(', ')}`)
+  console.error(`Available: ${[...NOTIFICATION_EVENTS].join(', ')}`)
+  process.exitCode = 1
+  return false
+}
+
+program
+  .command('mute')
+  .description('Temporarily mute notification sounds')
+  .action(() => {
+    writeConfig({ muted: true })
+    console.log('Notification sounds muted')
+  })
+
+program
+  .command('unmute')
+  .description('Unmute notification sounds')
+  .action(() => {
+    writeConfig({ muted: false })
+    console.log('Notification sounds unmuted')
+  })
+
+const events = program.command('events').description('Manage notification events')
+
+events
+  .command('list')
+  .description('Show available notification events')
+  .action(() => {
+    console.log('Notification Events\n')
+    for (const event of NOTIFICATION_EVENTS) {
+      console.log(`  ${event.padEnd(16)} ${EVENT_DESCRIPTIONS[event]}`)
+    }
+  })
+
+events
+  .command('show')
+  .description('Show current notification event preferences')
+  .action(() => {
+    const config = readConfig()
+    const enabled = getEnabledEvents(config)
+    console.log(`Notifications: ${config.muted === true ? 'muted' : 'unmuted'}`)
+    console.log(`Enabled events: ${enabled.length > 0 ? enabled.join(', ') : '(none)'}`)
+  })
+
+events
+  .command('enable')
+  .description('Enable notification events')
+  .argument('<events...>', 'Events to enable')
+  .action((eventNames: string[]) => {
+    if (!validateNotificationEvents(eventNames)) return
+    const current = getEnabledEvents(readConfig())
+    writeConfig({ enabledEvents: normalizeEvents([...current, ...eventNames]) })
+    console.log(`Enabled events: ${normalizeEvents([...current, ...eventNames]).join(', ')}`)
+  })
+
+events
+  .command('disable')
+  .description('Disable notification events')
+  .argument('<events...>', 'Events to disable')
+  .action((eventNames: string[]) => {
+    if (!validateNotificationEvents(eventNames)) return
+    const disabled = new Set(eventNames)
+    const next = getEnabledEvents(readConfig()).filter((event) => !disabled.has(event))
+    writeConfig({ enabledEvents: next })
+    console.log(`Enabled events: ${next.length > 0 ? next.join(', ') : '(none)'}`)
+  })
+
+events
+  .command('set')
+  .description('Replace the enabled notification event set')
+  .argument('<events...>', 'Events to enable')
+  .action((eventNames: string[]) => {
+    if (!validateNotificationEvents(eventNames)) return
+    const next = normalizeEvents(eventNames)
+    writeConfig({ enabledEvents: next })
+    console.log(`Enabled events: ${next.length > 0 ? next.join(', ') : '(none)'}`)
+  })
+
 // ── sounds ──────────────────────────────────────────────────────────
 
 const sounds = program.command('sounds').description('Manage custom sounds directory')
@@ -375,6 +462,6 @@ sounds
 
 export { program }
 
-if (!process.env['VITEST']) {
+if (!process.env.VITEST) {
   program.parse()
 }

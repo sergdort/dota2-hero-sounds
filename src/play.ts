@@ -1,11 +1,18 @@
 #!/usr/bin/env node
 
 /**
- * Standalone entry point for playing a sound by category.
- * Called by hooks: node <path>/dist/play.js <category>
+ * Standalone entry point for notification hooks and manual category playback.
+ *
+ * Hooks should call: node <path>/dist/play.js --event <semantic-event>
+ * Backward compatibility: node <path>/dist/play.js <category>
  */
 
-import { playSound } from './play-sound.js'
+import { notifyEvent, playCategory } from './play-sound.js'
 
-const category = process.argv[2] ?? 'success'
-playSound(category)
+const [, , firstArg, secondArg] = process.argv
+
+if (firstArg === '--event') {
+  notifyEvent(secondArg ?? '')
+} else {
+  playCategory(firstArg ?? 'success')
+}

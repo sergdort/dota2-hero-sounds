@@ -52,8 +52,8 @@ export function copyRuntimeFiles(): void {
   // Create install dir
   mkdirSync(installDir, { recursive: true })
 
-  // Copy dist JS files (play.js, play-sound.js, config.js, heroes.js)
-  const jsFiles = ['play.js', 'play-sound.js', 'config.js', 'heroes.js']
+  // Copy dist JS files needed by the standalone hook entry point
+  const jsFiles = ['play.js', 'play-sound.js', 'config.js', 'heroes.js', 'notifications.js']
   mkdirSync(targetDist, { recursive: true })
   for (const file of jsFiles) {
     const src = join(sourceDist, file)

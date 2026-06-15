@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { readConfig } from './config.js'
 import { filterSoundsByHeroes } from './heroes.js'
+import { categoryForEvent, shouldNotify } from './notifications.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -91,7 +92,7 @@ let lastPlayedAt = 0
  *
  * @param category - One of: success, error, attention, start
  */
-export function playSound(category: string): void {
+export function playCategory(category: string): void {
   const now = Date.now()
   if (now - lastPlayedAt < COOLDOWN_MS) {
     return
@@ -130,6 +131,25 @@ export function playSound(category: string): void {
   })
   child.unref()
 }
+
+/**
+ * Notify for a semantic event. Notification preferences gate this path.
+ * Direct category playback intentionally bypasses these preferences.
+ */
+export function notifyEvent(event: string): void {
+  const config = readConfig()
+  if (!shouldNotify(config, event)) {
+    return
+  }
+  const category = categoryForEvent(event)
+  if (!category) {
+    return
+  }
+  playCategory(category)
+}
+
+/** Backward-compatible alias for direct category playback. */
+export const playSound = playCategory
 
 /**
  * List all available categories and their sounds.

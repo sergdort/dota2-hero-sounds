@@ -118,7 +118,7 @@ describe('installClaudeHooks', () => {
     expect(mkdirSync).toHaveBeenCalledWith('/mock/home/.claude', { recursive: true })
   })
 
-  it('maps correct categories to events', () => {
+  it('maps correct semantic events to Claude events', () => {
     mockExistsSync.mockImplementation((p) => {
       if (String(p).endsWith('.claude')) return true
       return false
@@ -127,10 +127,10 @@ describe('installClaudeHooks', () => {
     installClaudeHooks('/path/to/play.js')
 
     const written = JSON.parse(String(mockWriteFileSync.mock.calls[0][1]).trim())
-    expect(written.hooks.Stop[0].hooks[0].command).toContain('success')
-    expect(written.hooks.PostToolUseFailure[0].hooks[0].command).toContain('error')
-    expect(written.hooks.Notification[0].hooks[0].command).toContain('attention')
-    expect(written.hooks.SessionStart[0].hooks[0].command).toContain('start')
+    expect(written.hooks.Stop[0].hooks[0].command).toContain('--event turn_complete')
+    expect(written.hooks.PostToolUseFailure[0].hooks[0].command).toContain('--event error')
+    expect(written.hooks.Notification[0].hooks[0].command).toContain('--event needs_attention')
+    expect(written.hooks.SessionStart[0].hooks[0].command).toContain('--event session_start')
   })
 })
 

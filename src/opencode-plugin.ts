@@ -41,6 +41,13 @@ import { join } from "node:path";
 
 const DEFAULT_SOUNDS_DIR = ${JSON.stringify(soundsDir)};
 const CATEGORY_NAMES = ["success", "error", "attention", "start"];
+const NOTIFICATION_EVENTS = ["session_start", "turn_complete", "needs_attention", "error"];
+const EVENT_TO_CATEGORY = {
+  session_start: "start",
+  turn_complete: "success",
+  needs_attention: "attention",
+  error: "error",
+};
 const CONFIG_PATH = join(homedir(), ".config", "dota2-sounds", "config.json");
 
 function readConfig() {
@@ -91,6 +98,19 @@ function filterByHeroes(sounds, heroes) {
   });
 }
 
+function getEnabledEvents(config) {
+  if (!Array.isArray(config.enabledEvents)) return NOTIFICATION_EVENTS;
+  const configured = new Set(config.enabledEvents.filter((event) => NOTIFICATION_EVENTS.includes(event)));
+  return NOTIFICATION_EVENTS.filter((event) => configured.has(event));
+}
+
+function shouldNotify(event) {
+  if (!NOTIFICATION_EVENTS.includes(event)) return false;
+  const config = readConfig();
+  if (config.muted === true) return false;
+  return getEnabledEvents(config).includes(event);
+}
+
 const COOLDOWN_MS = 3000;
 let lastPlayedAt = 0;
 
@@ -114,9 +134,16 @@ function playSound(category) {
   execFile("afplay", [soundPath], () => {});
 }
 
+function notifyEvent(event) {
+  if (!shouldNotify(event)) return;
+  const category = EVENT_TO_CATEGORY[event];
+  if (!category) return;
+  playSound(category);
+}
+
 export const Dota2Sounds = async ({ project, client, $, directory, worktree }) => {
   // Play start sound on plugin init (session.created fires before plugin loads)
-  playSound("start");
+  notifyEvent("session_start");
 
   // Track session status to detect busy -> idle transitions (task completion)
   let lastStatus = "idle";
@@ -128,19 +155,19 @@ export const Dota2Sounds = async ({ project, client, $, directory, worktree }) =
           const status = event.properties?.status?.type;
           // busy -> idle = agent finished responding
           if (lastStatus === "busy" && (status === "idle" || status === "done")) {
-            playSound("success");
+            notifyEvent("turn_complete");
           }
           if (status) lastStatus = status;
           break;
         }
         case "session.error":
-          playSound("error");
+          notifyEvent("error");
           break;
         case "permission.asked":
-          playSound("attention");
+          notifyEvent("needs_attention");
           break;
         case "session.created":
-          playSound("start");
+          notifyEvent("session_start");
           break;
       }
     },

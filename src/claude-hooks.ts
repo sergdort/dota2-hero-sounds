@@ -40,21 +40,21 @@ export function isClaudeCodeAvailable(): boolean {
  * @param playScriptPath - Absolute path to dist/play.js
  */
 function buildHooks(playScriptPath: string): Record<string, HookEntry[]> {
-  const makeHook = (category: string): HookEntry => ({
+  const makeHook = (event: string): HookEntry => ({
     matcher: '',
     hooks: [
       {
         type: 'command',
-        command: `node "${playScriptPath}" ${category} # ${HOOK_MARKER}`,
+        command: `node "${playScriptPath}" --event ${event} # ${HOOK_MARKER}`,
       },
     ],
   })
 
   return {
-    Stop: [makeHook('success')],
+    Stop: [makeHook('turn_complete')],
     PostToolUseFailure: [makeHook('error')],
-    Notification: [makeHook('attention')],
-    SessionStart: [makeHook('start')],
+    Notification: [makeHook('needs_attention')],
+    SessionStart: [makeHook('session_start')],
   }
 }
 

@@ -21,14 +21,35 @@ npx dota2-hero-sounds install --all        # All three
 
 When events occur in your coding tool, a random hero speaks:
 
-| Event | Category | Example Lines |
-|-------|----------|---------------|
-| Task complete | `success` | "Yes, Axe kills you!", "Burns, doesn't it?", "Told you a storm was coming!" |
-| Error | `error` | "An anchor around my neck!", "Okay, sure, I've made some mistakes.", "That was just a warm-up." |
-| Needs attention | `attention` | "Come to Pudge!", "Prepare thyself.", "Agony awaits." |
-| Session start | `start` | "Let the carnage begin!", "Storm Spirit is alive!", "Your God has arrived." |
+| Notification Event | Sound Category | Example Lines |
+|--------------------|----------------|---------------|
+| `turn_complete` — agent finished and is waiting for input | `success` | "Yes, Axe kills you!", "Burns, doesn't it?", "Told you a storm was coming!" |
+| `error` — tool/session error | `error` | "An anchor around my neck!", "Okay, sure, I've made some mistakes.", "That was just a warm-up." |
+| `needs_attention` — permission prompt/user action needed | `attention` | "Come to Pudge!", "Prepare thyself.", "Agony awaits." |
+| `session_start` — session launched | `start` | "Let the carnage begin!", "Storm Spirit is alive!", "Your God has arrived." |
 
 A random sound is picked from the matching category each time. Sounds have a 3-second cooldown to prevent overlapping voice lines.
+
+## Notification Preferences
+
+Choose which semantic events should make sound:
+
+```bash
+npx dota2-hero-sounds events list
+npx dota2-hero-sounds events show
+npx dota2-hero-sounds events disable turn_complete
+npx dota2-hero-sounds events set session_start error needs_attention
+npx dota2-hero-sounds events enable turn_complete
+```
+
+Temporarily silence notifications without losing your event preferences:
+
+```bash
+npx dota2-hero-sounds mute
+npx dota2-hero-sounds unmute
+```
+
+Preferences are saved to `~/.config/dota2-sounds/config.json` and take effect immediately — no reinstall needed. By default, all supported events are enabled for backward compatibility. Manual testing commands still play sounds while muted.
 
 ## Hero Selection
 
@@ -60,7 +81,9 @@ You can also edit `~/.config/dota2-sounds/config.json` directly:
 ```json
 {
   "heroes": [],
-  "soundsDir": "/path/to/my-sounds"
+  "soundsDir": "/path/to/my-sounds",
+  "muted": false,
+  "enabledEvents": ["session_start", "turn_complete", "needs_attention", "error"]
 }
 ```
 
@@ -71,6 +94,11 @@ dota2-hero-sounds install       # Install hooks/plugins
 dota2-hero-sounds uninstall     # Remove everything cleanly
 dota2-hero-sounds test          # Play one sound per category
 dota2-hero-sounds list          # Show all sounds by category
+dota2-hero-sounds mute          # Mute notification sounds
+dota2-hero-sounds unmute        # Unmute notification sounds
+dota2-hero-sounds events list   # Show available notification events
+dota2-hero-sounds events show   # Show current notification preferences
+dota2-hero-sounds events set    # Replace enabled notification events
 dota2-hero-sounds hero list     # Show heroes with per-category counts
 dota2-hero-sounds hero set      # Set preferred heroes
 dota2-hero-sounds sounds set    # Set custom sounds directory
@@ -82,23 +110,22 @@ dota2-hero-sounds help          # Show help
 ## What Gets Installed
 
 **Claude Code** — Hooks added to `~/.claude/settings.json`:
-- `Stop` → plays success sound
-- `PostToolUseFailure` → plays error sound
-- `Notification` → plays attention sound
-- `SessionStart` → plays start sound
+- `Stop` → `turn_complete` → success sound
+- `PostToolUseFailure` → `error` → error sound
+- `Notification` → `needs_attention` → attention sound
+- `SessionStart` → `session_start` → start sound
 
 **OpenCode** — Plugin written to `~/.config/opencode/plugins/dota2-sounds.js`:
-- `session.status` busy→idle transition → plays success sound
-- `session.error` → plays error sound
-- `permission.asked` → plays attention sound
-- Plugin init → plays start sound (session.created fires too early)
+- `session.status` busy→idle transition → `turn_complete` → success sound
+- `session.error` → `error` → error sound
+- `permission.asked` → `needs_attention` → attention sound
+- Plugin init → `session_start` → start sound (session.created fires too early)
 
 **Pi** — Extension installed via `pi install` as a Pi package:
-- `session_start` → plays start sound
-- `agent_end` → plays success sound
-- `tool_execution_end` (when `isError`) → plays error sound
-- `session_shutdown` → plays error sound
-- *Attention sound not available* — Pi has no permission/notification event
+- `session_start` → `session_start` → start sound
+- `agent_end` → `turn_complete` → success sound
+- `tool_execution_end` (when `isError`) → `error` → error sound
+- *Attention sound not available* — Pi has no permission/notification event for `needs_attention`
 
 ## Uninstall
 

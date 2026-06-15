@@ -23,6 +23,12 @@ node dist/cli.js hero list          # show available heroes with per-category co
 node dist/cli.js hero set axe pudge # set preferred heroes
 node dist/cli.js hero show          # show current hero preference
 node dist/cli.js hero clear         # clear preference (use all heroes)
+node dist/cli.js events list        # show semantic notification events
+node dist/cli.js events show        # show current notification preferences
+node dist/cli.js events set session_start error needs_attention # replace enabled events
+node dist/cli.js events disable turn_complete # disable one or more notification events
+node dist/cli.js mute               # mute notification sounds
+node dist/cli.js unmute             # unmute notification sounds
 node dist/cli.js sounds set /path   # set custom sounds directory (replaces defaults)
 node dist/cli.js sounds show        # show current sounds directory
 node dist/cli.js sounds clear       # clear custom dir (use defaults)
@@ -36,10 +42,11 @@ pnpm check                          # auto-fix lint/format issues
 
 ```
 src/
-  play-sound.ts     — Core: category definitions, random selection, afplay, hero filtering
-  play.ts           — Standalone entry point for hooks: node dist/play.js <category>
-  cli.ts            — Commander.js CLI (install/uninstall/test/list/hero)
-  config.ts         — Reads/writes hero config from ~/.config/dota2-sounds/config.json
+  play-sound.ts     — Core: category playback, random selection, afplay, hero filtering
+  notifications.ts  — Semantic notification events, event→category mapping, mute/enabled policy
+  play.ts           — Standalone entry point for hooks: node dist/play.js --event <event>; category args still work
+  cli.ts            — Commander.js CLI (install/uninstall/test/list/hero/events/mute)
+  config.ts         — Reads/writes config from ~/.config/dota2-sounds/config.json
   heroes.ts         — Hero extraction from filenames, filtering, listing
   claude-hooks.ts   — Reads/writes Claude Code hooks in ~/.claude/settings.json
   opencode-plugin.ts — Generates self-contained OpenCode plugin to ~/.config/opencode/plugins/
@@ -56,12 +63,16 @@ sounds/
 
 ### Key implementation details
 
-- Claude Code hooks call `node <abs-path>/dist/play.js <category>` with absolute paths resolved at install time
+- Claude Code hooks call `node <abs-path>/dist/play.js --event <semantic-event>` with absolute paths resolved at install time
 - Hooks are tagged with `# dota2-hero-sounds` comment for clean install/uninstall
 - OpenCode plugin uses `session.status` busy->idle transition for completion detection, not `session.idle`
 - OpenCode plugin plays start sound on plugin init since `session.created` fires before plugin loads
-- Pi extension uses `session_start`, `agent_end`, `tool_execution_end`, and `session_shutdown` events
-- Pi extension plays attention sound only for dangerous bash commands (rm, sudo, chmod, etc.)
+- Notification preferences use semantic events: `session_start`, `turn_complete`, `needs_attention`, `error`
+- Semantic events map to sound categories: `session_start→start`, `turn_complete→success`, `needs_attention→attention`, `error→error`
+- `enabledEvents` and `muted` live in `~/.config/dota2-sounds/config.json`; missing `enabledEvents` means all v1 events are enabled
+- Direct category playback/tests bypass notification preferences; only `--event` hook playback is gated
+- Pi extension uses `session_start`, `agent_end`, and `tool_execution_end` events
+- Pi does not support `needs_attention` in v1 because there is no certain permission/notification event
 - Sound playback is async/non-blocking (detached `afplay` process)
 - All sound players have a 3-second debounce cooldown to prevent overlapping sounds
 - Hero preferences stored in `~/.config/dota2-sounds/config.json`, read at runtime by all tools
@@ -80,7 +91,7 @@ Only events with certain detection are implemented. If a tool doesn't support a 
 | Task complete | `Stop` | `session.status` busy→idle | `agent_end` |
 | Error/failure | `PostToolUseFailure` | `session.error` | `tool_execution_end` (`isError`) |
 | Needs attention | `Notification` | `permission.asked` | *not supported* |
-| Session exit | *not supported* | *not supported* | `session_shutdown` |
+| Session exit | *not supported* | *not supported* | *not supported* |
 
 ## Sound Categories
 

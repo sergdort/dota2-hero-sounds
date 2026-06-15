@@ -67,9 +67,9 @@ import { installClaudeHooks, isClaudeCodeAvailable, uninstallClaudeHooks } from 
 import { program } from './cli.js'
 import { readConfig, writeConfig } from './config.js'
 import { getAvailableHeroes } from './heroes.js'
-import { getInstalledSoundsDir } from './install-files.js'
 
 const mockExistsSync = vi.mocked(existsSync)
+
 import {
   installOpenCodePlugin,
   isOpenCodeAvailable,
@@ -314,6 +314,76 @@ describe('test command', () => {
 
     expect(playSound).not.toHaveBeenCalled()
     expect(errorOutput.join('\n')).toContain('Unknown category: invalid')
+    expect(process.exitCode).toBe(1)
+  })
+})
+
+describe('notification events commands', () => {
+  it('mutes and unmutes notifications', async () => {
+    await run('mute')
+    expect(writeConfig).toHaveBeenCalledWith({ muted: true })
+    expect(logOutput.join('\n')).toContain('Notification sounds muted')
+
+    vi.mocked(writeConfig).mockClear()
+    logOutput = []
+
+    await run('unmute')
+    expect(writeConfig).toHaveBeenCalledWith({ muted: false })
+    expect(logOutput.join('\n')).toContain('Notification sounds unmuted')
+  })
+
+  it('shows effective events and mute status', async () => {
+    vi.mocked(readConfig).mockReturnValue({
+      heroes: [],
+      muted: true,
+      enabledEvents: ['error', 'turn_complete'],
+    })
+
+    await run('events', 'show')
+
+    const output = logOutput.join('\n')
+    expect(output).toContain('Notifications: muted')
+    expect(output).toContain('turn_complete')
+    expect(output).toContain('error')
+  })
+
+  it('lists available events', async () => {
+    await run('events', 'list')
+
+    const output = logOutput.join('\n')
+    expect(output).toContain('session_start')
+    expect(output).toContain('turn_complete')
+    expect(output).toContain('needs_attention')
+    expect(output).toContain('error')
+  })
+
+  it('enables events into the current effective set', async () => {
+    vi.mocked(readConfig).mockReturnValue({ heroes: [], enabledEvents: ['error'] })
+
+    await run('events', 'enable', 'turn_complete')
+
+    expect(writeConfig).toHaveBeenCalledWith({ enabledEvents: ['turn_complete', 'error'] })
+  })
+
+  it('disables events from the current effective set', async () => {
+    vi.mocked(readConfig).mockReturnValue({ heroes: [] })
+
+    await run('events', 'disable', 'turn_complete', 'needs_attention')
+
+    expect(writeConfig).toHaveBeenCalledWith({ enabledEvents: ['session_start', 'error'] })
+  })
+
+  it('sets events to a normalized allowlist', async () => {
+    await run('events', 'set', 'error', 'session_start')
+
+    expect(writeConfig).toHaveBeenCalledWith({ enabledEvents: ['session_start', 'error'] })
+  })
+
+  it('rejects unknown events', async () => {
+    await run('events', 'enable', 'invalid')
+
+    expect(writeConfig).not.toHaveBeenCalled()
+    expect(errorOutput.join('\n')).toContain('Unknown event(s): invalid')
     expect(process.exitCode).toBe(1)
   })
 })

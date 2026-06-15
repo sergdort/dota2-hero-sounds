@@ -5,6 +5,8 @@ import { dirname, join } from 'node:path'
 export interface Config {
   heroes: string[]
   soundsDir?: string
+  muted?: boolean
+  enabledEvents?: string[]
 }
 
 export function getConfigPath(): string {
@@ -26,6 +28,12 @@ export function readConfig(): Config {
     }
     if (typeof parsed.soundsDir === 'string' && parsed.soundsDir) {
       config.soundsDir = parsed.soundsDir
+    }
+    if (typeof parsed.muted === 'boolean') {
+      config.muted = parsed.muted
+    }
+    if (Array.isArray(parsed.enabledEvents)) {
+      config.enabledEvents = parsed.enabledEvents.filter((e: unknown) => typeof e === 'string')
     }
     return config
   } catch {

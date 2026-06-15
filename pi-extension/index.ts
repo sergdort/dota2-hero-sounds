@@ -9,6 +9,13 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 const CATEGORIES = ['success', 'error', 'attention', 'start'] as const
+const NOTIFICATION_EVENTS = ['session_start', 'turn_complete', 'needs_attention', 'error'] as const
+const EVENT_TO_CATEGORY: Record<string, string> = {
+  session_start: 'start',
+  turn_complete: 'success',
+  needs_attention: 'attention',
+  error: 'error',
+}
 
 /**
  * Resolve the sounds directory.
@@ -72,6 +79,21 @@ function filterByHeroes(sounds: string[], heroes: string[]): string[] {
   })
 }
 
+function getEnabledEvents(config: Record<string, unknown>): string[] {
+  if (!Array.isArray(config.enabledEvents)) return [...NOTIFICATION_EVENTS]
+  const configured = new Set(
+    config.enabledEvents.filter((event): event is string => typeof event === 'string'),
+  )
+  return NOTIFICATION_EVENTS.filter((event) => configured.has(event))
+}
+
+function shouldNotify(event: string): boolean {
+  if (!NOTIFICATION_EVENTS.includes(event as (typeof NOTIFICATION_EVENTS)[number])) return false
+  const config = readConfig()
+  if (config.muted === true) return false
+  return getEnabledEvents(config).includes(event)
+}
+
 const COOLDOWN_MS = 3000
 let lastPlayedAt = 0
 
@@ -95,26 +117,28 @@ function playSound(category: string): void {
   execFile('afplay', [soundPath], () => {})
 }
 
+function notifyEvent(event: string): void {
+  if (!shouldNotify(event)) return
+  const category = EVENT_TO_CATEGORY[event]
+  if (!category) return
+  playSound(category)
+}
+
 export default function (pi: ExtensionAPI) {
   // Play start sound when session begins
   pi.on('session_start', async () => {
-    playSound('start')
+    notifyEvent('session_start')
   })
 
   // Play success sound when agent finishes responding
   pi.on('agent_end', async () => {
-    playSound('success')
+    notifyEvent('turn_complete')
   })
 
   // Play error sound when a tool execution fails
   pi.on('tool_execution_end', async (event) => {
     if (event.isError) {
-      playSound('error')
+      notifyEvent('error')
     }
-  })
-
-  // Play error sound on session shutdown
-  pi.on('session_shutdown', async () => {
-    playSound('error')
   })
 }

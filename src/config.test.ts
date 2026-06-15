@@ -60,9 +60,7 @@ describe('readConfig', () => {
 
   it('returns soundsDir when present in config', () => {
     mockExistsSync.mockReturnValue(true)
-    mockReadFileSync.mockReturnValue(
-      JSON.stringify({ heroes: ['axe'], soundsDir: '/my/sounds' }),
-    )
+    mockReadFileSync.mockReturnValue(JSON.stringify({ heroes: ['axe'], soundsDir: '/my/sounds' }))
     expect(readConfig()).toEqual({ heroes: ['axe'], soundsDir: '/my/sounds' })
   })
 
@@ -76,6 +74,26 @@ describe('readConfig', () => {
     mockExistsSync.mockReturnValue(true)
     mockReadFileSync.mockReturnValue(JSON.stringify({ heroes: [], soundsDir: '' }))
     expect(readConfig()).toEqual({ heroes: [] })
+  })
+
+  it('returns muted and enabledEvents when present in config', () => {
+    mockExistsSync.mockReturnValue(true)
+    mockReadFileSync.mockReturnValue(
+      JSON.stringify({ heroes: [], muted: true, enabledEvents: ['error', 'turn_complete'] }),
+    )
+    expect(readConfig()).toEqual({
+      heroes: [],
+      muted: true,
+      enabledEvents: ['error', 'turn_complete'],
+    })
+  })
+
+  it('filters non-string values from enabledEvents and omits non-boolean muted', () => {
+    mockExistsSync.mockReturnValue(true)
+    mockReadFileSync.mockReturnValue(
+      JSON.stringify({ heroes: [], muted: 'yes', enabledEvents: ['error', 42, null] }),
+    )
+    expect(readConfig()).toEqual({ heroes: [], enabledEvents: ['error'] })
   })
 })
 
@@ -113,9 +131,7 @@ describe('writeConfig', () => {
 
   it('setting heroes preserves existing soundsDir', () => {
     mockExistsSync.mockReturnValue(true)
-    mockReadFileSync.mockReturnValue(
-      JSON.stringify({ heroes: ['axe'], soundsDir: '/my/sounds' }),
-    )
+    mockReadFileSync.mockReturnValue(JSON.stringify({ heroes: ['axe'], soundsDir: '/my/sounds' }))
 
     writeConfig({ heroes: ['pudge'] })
 
@@ -125,14 +141,27 @@ describe('writeConfig', () => {
 
   it('clearing soundsDir removes the key from JSON', () => {
     mockExistsSync.mockReturnValue(true)
-    mockReadFileSync.mockReturnValue(
-      JSON.stringify({ heroes: ['axe'], soundsDir: '/my/sounds' }),
-    )
+    mockReadFileSync.mockReturnValue(JSON.stringify({ heroes: ['axe'], soundsDir: '/my/sounds' }))
 
     writeConfig({ soundsDir: undefined })
 
     const written = JSON.parse(mockWriteFileSync.mock.calls[0][1] as string)
     expect(written).toEqual({ heroes: ['axe'] })
     expect(written).not.toHaveProperty('soundsDir')
+  })
+
+  it('setting notification fields preserves existing config', () => {
+    mockExistsSync.mockReturnValue(true)
+    mockReadFileSync.mockReturnValue(JSON.stringify({ heroes: ['axe'], soundsDir: '/my/sounds' }))
+
+    writeConfig({ muted: true, enabledEvents: ['error'] })
+
+    const written = JSON.parse(mockWriteFileSync.mock.calls[0][1] as string)
+    expect(written).toEqual({
+      heroes: ['axe'],
+      soundsDir: '/my/sounds',
+      muted: true,
+      enabledEvents: ['error'],
+    })
   })
 })

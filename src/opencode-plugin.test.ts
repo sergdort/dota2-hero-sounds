@@ -107,6 +107,21 @@ describe('installOpenCodePlugin', () => {
     expect(source).toContain('permission.asked')
     expect(source).toContain('session.created')
   })
+
+  it('generated source maps native events to semantic notification events', () => {
+    mockExistsSync.mockReturnValue(true)
+
+    installOpenCodePlugin()
+
+    const source = String(mockWriteFileSync.mock.calls[0][1])
+    expect(source).toContain('NOTIFICATION_EVENTS')
+    expect(source).toContain('notifyEvent("session_start")')
+    expect(source).toContain('notifyEvent("turn_complete")')
+    expect(source).toContain('notifyEvent("needs_attention")')
+    expect(source).toContain('notifyEvent("error")')
+    expect(source).toContain('config.muted === true')
+    expect(source).toContain('config.enabledEvents')
+  })
 })
 
 describe('uninstallOpenCodePlugin', () => {
